@@ -19,22 +19,15 @@ Do not assume the upstream Lwt-based API has the same return types.
 
 ```sh
 git clone https://github.com/Microapps-Labs/dream-validate.git
+git clone --branch cohttp-eio https://github.com/Microapps-Labs/dream-cohttp-eio.git
 cd dream-validate
+opam pin add --no-action dream-pure ../dream-cohttp-eio
+opam pin add --no-action dream ../dream-cohttp-eio
 opam install . --deps-only --with-test
 opam exec -- dune exec examples/demo/main.exe
 opam exec -- dune runtest
 ```
 
-For the tested dependency setup, clone the cohttp-eio branch alongside this
-repository and pin both packages from that same checkout:
-
-```sh
-git clone --branch cohttp-eio https://github.com/Microapps-Labs/dream-cohttp-eio.git ../dream-cohttp-eio
-opam pin add --no-action dream-pure ../dream-cohttp-eio
-opam pin add --no-action dream ../dream-cohttp-eio
-```
-
-Run these pins before the dependency-install command above.
 The local example trims `"  alice  "` to `"alice"` and applies a minimum-length
 validator to `"ab"`.
 
