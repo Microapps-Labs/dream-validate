@@ -1,0 +1,3 @@
+Typed field decoding from local values, no HTTP server
+"  alice  " -> username="alice"
+"ab" -> username must be at least 3 characters.

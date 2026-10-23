@@ -6,8 +6,8 @@ description:
 maintainer: ["OlegHQ"]
 authors: ["OlegHQ"]
 license: "MIT"
-homepage: "https://github.com/OlegHQ/dream-validate"
-bug-reports: "https://github.com/OlegHQ/dream-validate/issues"
+homepage: "https://github.com/Microapps-Labs/dream-validate"
+bug-reports: "https://github.com/Microapps-Labs/dream-validate/issues"
 depends: [
   "ocaml" {>= "5.2"}
   "dune" {>= "3.22" & >= "3.22"}

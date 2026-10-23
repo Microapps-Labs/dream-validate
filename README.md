@@ -1,118 +1,65 @@
 # dream-validate
 
-Typed Dream request decoding and declarative DTO validation for OCaml web apps.
+Decode and validate form, query, route, session and JSON inputs in OCaml Dream
+applications. Use the runtime decoders directly, or derive record decoders with
+the included PPX.
 
-The package provides:
+![A local field decoder trimming a name and rejecting a short value](docs/demo/decoding.png)
 
-- `Dream_validate.Form` runtime decoders for form/query-style field lists.
-- `Dream_validate.Query`, `Dream_validate.Route`, and
-  `Dream_validate.Session` adapters for non-body Dream boundaries.
-- `Dream_validate.Json` runtime decoders for JSON object fields and request
-  bodies.
-- `Dream_validate.Validation` reusable validators and structured errors.
-- `dream-validate.ppx`, derivers that generate record DTO decoders from field
-  attributes.
+The example uses local field lists. It starts no HTTP server and handles no
+real user data. See [capture details](docs/demo/README.md).
 
-The first target use case is server-rendered Dream applications that want typed
-request DTOs without handwritten `List.assoc_opt` plumbing.
+## Build and try the example
 
-## Example
+Use an OCaml 5.2 or later switch, Dune 3.22 or later, and a compatible Dream
+implementation. This library's request adapters target the synchronous Dream
+API used by the `cohttp-eio` branch of
+[Microapps-Labs/dream-cohttp-eio](https://github.com/Microapps-Labs/dream-cohttp-eio/tree/cohttp-eio).
+Do not assume the upstream Lwt-based API has the same return types.
 
-```ocaml
-type registration_form = {
-  username : string
-    [@form.trim]
-    [@validate.min_length 3]
-    [@validate.max_length 40]
-    [@validate.charset "username"];
-  password : string [@validate.min_length 8];
-}
-[@@deriving dream_form]
-
-let register request =
-  match registration_form_of_request request with
-  | Ok form -> (* use typed DTO *)
-  | Error errors -> (* render validation messages *)
+```sh
+git clone https://github.com/Microapps-Labs/dream-validate.git
+cd dream-validate
+opam install . --deps-only --with-test
+opam exec -- dune exec examples/demo/main.exe
+opam exec -- dune runtest
 ```
 
-JSON DTOs use the same validation attributes:
+For the tested dependency setup, clone the cohttp-eio branch alongside this
+repository and pin both packages from that same checkout:
 
-```ocaml
-type post_json = {
-  body : string [@json.trim] [@validate.required] [@validate.max_length 5000];
-  media_ids : string list [@json.key "mediaIds"];
-  draft : bool option;
-}
-[@@deriving dream_json]
-
-let create_from_api request =
-  match post_json_of_json_request request with
-  | Ok dto -> (* use typed DTO *)
-  | Error errors -> (* return a 400/422 response *)
+```sh
+git clone --branch cohttp-eio https://github.com/Microapps-Labs/dream-cohttp-eio.git ../dream-cohttp-eio
+opam pin add --no-action dream-pure ../dream-cohttp-eio
+opam pin add --no-action dream ../dream-cohttp-eio
 ```
 
-Supported field attributes:
+Run these pins before the dependency-install command above.
+The local example trims `"  alice  "` to `"alice"` and applies a minimum-length
+validator to `"ab"`.
 
-- `[@form.key "field_name"]`
-- `[@form.trim]`
-- `[@session.key "session_field_name"]`
-- `[@session.csv]` for `string list` fields stored as comma-separated session
-  values
-- `[@json.key "field_name"]`
-- `[@json.trim]`
-- `[@validate.required]`
-- `[@validate.min_length n]`
-- `[@validate.max_length n]`
-- `[@validate.charset "username"]`
+## Runtime decoding
 
-Supported field types in the first release:
+`Source.of_fields` builds an input source. `Form.field` selects a value and can
+trim or validate it. `Form.decode` returns a typed value or a list of errors
+with `field`, `code` and `message` fields. The
+[runnable example](examples/demo/main.ml) shows the complete call.
 
-- `string`
-- `string list`
-- `int`
-- `int option`
-- `bool`
-- `bool option`
+Query, route, session and JSON adapters are defined in the
+[public interface](lib/dream_validate.mli). Your handler decides how errors map
+to an HTTP response and which values are safe to accept.
 
-The runtime API is intentionally ordinary OCaml so projects can use it directly
-without PPX when a custom decoder is clearer.
+## Derived record decoders
 
-Generated functions:
+The `dream-validate.ppx` library provides `dream_form` and `dream_json` derivers.
+Attributes can rename input keys, trim strings and add validation rules. See
+[the record examples](docs/record-decoders.md) for supported fields and generated
+functions. Those functions do not replace authorization or application rules.
 
-- `[@@deriving dream_form]` generates `<type>_of_source` and
-  `<type>_of_request`.
-- It also generates `<type>_form_fields`, `<type>_session_fields`,
-  `<type>_session_csv_fields`, `<type>_of_query`, `<type>_of_route`, and
-  `<type>_of_session`, so route/query/session extraction can use the DTO field
-  names and attributes instead of repeating string key lists at each handler.
-- `[@@deriving dream_json]` generates `<type>_of_json_source`,
-  `<type>_of_json`, `<type>_of_json_string`, and `<type>_of_json_request`.
+## Development
 
-Non-body boundaries can use the generated request decoders directly:
+The tests cover runtime and PPX behavior. Request-adapter behavior also depends
+on the Dream version linked by your application; a local decoder capture is not
+an end-to-end web-server qualification.
 
-```ocaml
-type post_route = { post_id : string [@validate.required] }
-[@@deriving dream_form]
-
-let route = post_route_of_route request
-
-type notice_query = {
-  notice : string option;
-  notice_type : string option [@form.key "notice_type"];
-}
-[@@deriving dream_form]
-
-let query = notice_query_of_query request
-
-type media_session = {
-  media_ids : string list
-    [@form.key "media_id"]
-    [@session.key "composer_media_ids"]
-    [@session.csv];
-}
-[@@deriving dream_form]
-
-let media = media_session_of_session request
-
-let session = user_session_of_session request
-```
+[MIT](LICENSE.md).

@@ -9,8 +9,8 @@
  (synopsis "Typed Dream request decoding and declarative DTO validation")
  (description
   "Small OCaml library and PPX deriver for typed Dream form/query/JSON DTO decoding with declarative validation rules.")
- (homepage "https://github.com/OlegHQ/dream-validate")
- (bug_reports "https://github.com/OlegHQ/dream-validate/issues")
+ (homepage "https://github.com/Microapps-Labs/dream-validate")
+ (bug_reports "https://github.com/Microapps-Labs/dream-validate/issues")
  (license MIT)
  (authors OlegHQ)
  (maintainers OlegHQ)
